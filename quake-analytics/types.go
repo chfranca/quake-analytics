@@ -10,7 +10,6 @@ import (
 
 const (
 	initGame      string = "InitGame"
-	shutdown      string = "ShutdownGame"
 	kill          string = "Kill"
 	userConnected string = "ClientUserinfoChanged"
 )
