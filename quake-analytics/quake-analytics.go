@@ -39,7 +39,7 @@ func startGame() *Game {
 	}
 }
 
-func shutdownGame(game *Game, report *Report) {
+func restartGame(game *Game, report *Report) {
 	report.Games = append(report.Games, *game)
 }
 
@@ -80,7 +80,7 @@ func process(stream <-chan string, report *Report) {
 		switch {
 		case strings.Contains(line, initGame):
 			if game != nil && len(game.Players) > 0 {
-				shutdownGame(game, report)
+				restartGame(game, report)
 			}
 			game = startGame()
 		case strings.Contains(line, userConnected):

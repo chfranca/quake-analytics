@@ -41,6 +41,11 @@ func (g Game) String() string {
 
 func (g Game) Ranking() string {
 
+	type pair struct {
+		Key   string
+		Value int
+	}
+
 	var ranking []pair
 	for k, v := range g.Kills {
 		ranking = append(ranking, pair{k, v})
@@ -55,9 +60,4 @@ func (g Game) Ranking() string {
 		rankingString = append(rankingString, fmt.Sprintf("%s:%d", pair.Key, pair.Value))
 	}
 	return strings.Join(rankingString, ",\n")
-}
-
-type pair struct {
-	Key   string
-	Value int
 }
