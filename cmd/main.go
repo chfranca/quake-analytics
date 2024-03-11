@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	quakeanalytics "quake-logs-parser/quake-analytics"
+	analytics "quake-logs-parser/analytics"
 )
 
 func main() {
 
-	report := quakeanalytics.Report{Games: []quakeanalytics.Game{}}
-	quakeanalytics.ProcessLog("qgames.log", &report)
+	file := "qgames.log"
+	report := analytics.Report{Games: []analytics.Game{}}
+	analytics.ProcessLog(file, &report)
 
 	for i, v := range report.Games {
 		f := fmt.Sprintf(`{"game_%d": %s}`, i+1, v)

@@ -1,4 +1,4 @@
-package quakeanalytics
+package analytics
 
 import (
 	"bufio"
