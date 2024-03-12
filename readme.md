@@ -7,5 +7,6 @@ This is a simple project, in wip, to read and parse a log game based on rounds a
 You need [go 1.22](https://go.dev/dl/) installed in your machine. Just, run the follow command in the root project dir
 
 ```shell
-go run cmd/main.go
+# go run cmd/main.go qgame.log
+go run cmd/main.go <filepath>
 ```

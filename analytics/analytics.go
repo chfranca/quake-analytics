@@ -7,40 +7,80 @@ import (
 	"strings"
 )
 
-func ProcessLog(path string, report *Report) {
+func ProcessLog(path string) *Report {
+
+	stream := readFile(path)
+	results := process(stream)
+
+	report := Report{Games: []Game{}}
+
+	for r := range results {
+		report.Games = append(report.Games, r)
+	}
+
+	return &report
+}
+
+func readFile(path string) <-chan string {
 
 	stream := make(chan string, 100)
 
-	go process(stream, report)
-	readFile(path, stream)
+	go func() {
+		file, err := os.Open(path)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+
+		for scanner.Scan() {
+			stream <- scanner.Text()
+		}
+		close(stream)
+	}()
+
+	return stream
 }
 
-func readFile(path string, stream chan<- string) {
-	file, err := os.Open(path)
+func process(stream <-chan string) <-chan Game {
 
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+	var game Game
+	results := make(chan Game, 100)
 
-	scanner := bufio.NewScanner(file)
+	go func() {
+		for line := range stream {
+			switch {
+			case strings.Contains(line, initGame):
+				if len(game.Players) != 0 {
+					results <- game
+				}
+				startGame(&game)
+			case strings.Contains(line, endGame):
+				results <- game
+				game = Game{}
+			case strings.Contains(line, userConnected):
+				registerPlayer(&game, line)
+			case strings.Contains(line, kill):
+				registerKill(&game, line)
+			default:
+			}
+		}
+		close(results)
+	}()
 
-	for scanner.Scan() {
-		stream <- scanner.Text()
-	}
+	return results
+
 }
 
-func startGame() *Game {
-	return &Game{
+func startGame(game *Game) {
+	*game = Game{
 		TotalKills:   0,
 		Players:      []string{},
 		Kills:        map[string]int{},
 		KillsByMeans: map[string]int{},
 	}
-}
-
-func restartGame(game *Game, report *Report) {
-	report.Games = append(report.Games, *game)
 }
 
 func registerPlayer(game *Game, line string) {
@@ -71,23 +111,4 @@ func extractParties(log string) (killer string, killed string, mode string) {
 	killed = strings.TrimSpace(strings.Split(parties[1], "by")[0])
 	mode = strings.TrimSpace(strings.Split(parties[1], "by")[1])
 	return
-}
-
-func process(stream <-chan string, report *Report) {
-
-	var game *Game
-	for line := range stream {
-		switch {
-		case strings.Contains(line, initGame):
-			if game != nil && len(game.Players) > 0 {
-				restartGame(game, report)
-			}
-			game = startGame()
-		case strings.Contains(line, userConnected):
-			registerPlayer(game, line)
-		case strings.Contains(line, kill):
-			registerKill(game, line)
-		default:
-		}
-	}
 }

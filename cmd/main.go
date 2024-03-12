@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	analytics "quake-logs-parser/analytics"
+	"quake-logs-parser/analytics"
 )
 
 func main() {
@@ -16,14 +16,11 @@ func main() {
 		return
 	}
 
-	filepath := args[0]
-
-	report := analytics.Report{Games: []analytics.Game{}}
-	analytics.ProcessLog(filepath, &report)
+	path := args[0]
+	report := analytics.ProcessLog(path)
 
 	for i, v := range report.Games {
-		f := fmt.Sprintf(`{"game_%d": %s}`, i+1, v)
-		fmt.Println(f)
-		fmt.Printf("Ranking:\n%s", v.Ranking())
+		fmt.Printf("{\"game_%d\": %s}\n", i+1, v)
+		fmt.Printf("\nRanking:\n%s\n\n", v.PlayerRanking())
 	}
 }

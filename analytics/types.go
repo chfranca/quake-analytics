@@ -11,6 +11,7 @@ import (
 const (
 	initGame      string = "InitGame"
 	kill          string = "Kill"
+	endGame       string = "ShutdownGame"
 	userConnected string = "ClientUserinfoChanged"
 )
 
@@ -39,7 +40,7 @@ func (g Game) String() string {
 	return string(json)
 }
 
-func (g Game) Ranking() string {
+func (g *Game) PlayerRanking() string {
 
 	type pair struct {
 		Key   string
