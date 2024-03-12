@@ -2,8 +2,10 @@ package analytics
 
 import (
 	"bufio"
+	"errors"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -14,8 +16,9 @@ func ProcessLog(path string) *Report {
 
 	report := Report{Games: []Game{}}
 
-	for r := range results {
-		report.Games = append(report.Games, r)
+	for g := range results {
+		g.makeRanking()
+		report.Games = append(report.Games, g)
 	}
 
 	return &report
@@ -52,17 +55,17 @@ func process(stream <-chan string) <-chan Game {
 	go func() {
 		for line := range stream {
 			switch {
-			case strings.Contains(line, initGame):
+			case strings.Contains(line, string(initGame)):
 				if len(game.Players) != 0 {
 					results <- game
 				}
 				startGame(&game)
-			case strings.Contains(line, endGame):
+			case strings.Contains(line, string(endGame)):
 				results <- game
 				game = Game{}
-			case strings.Contains(line, userConnected):
+			case strings.Contains(line, string(userConnected)):
 				registerPlayer(&game, line)
-			case strings.Contains(line, kill):
+			case strings.Contains(line, string(kill)):
 				registerKill(&game, line)
 			default:
 			}
@@ -85,6 +88,7 @@ func startGame(game *Game) {
 
 func registerPlayer(game *Game, line string) {
 	player := strings.Split(line, "\\")[1]
+
 	if _, exists := game.Kills[player]; !exists {
 		game.Players = append(game.Players, player)
 		game.Kills[player] = 0
@@ -92,11 +96,16 @@ func registerPlayer(game *Game, line string) {
 }
 
 func registerKill(game *Game, line string) {
-	log := strings.Split(line, ":")
-	killer, killed, mode := extractParties(log[len(log)-1])
+	parties, err := extractParties(line)
+	if err != nil {
+		log.Println("Log not corresponding with pattern", line)
+		return
+	}
+
+	killer, killed, mode := parties[0], parties[1], parties[2]
 	game.TotalKills++
 
-	if killer != worldUser {
+	if killer != string(worldName) {
 		game.Kills[killer]++
 	} else if game.Kills[killed] > 0 {
 		game.Kills[killed]--
@@ -105,10 +114,16 @@ func registerKill(game *Game, line string) {
 	game.KillsByMeans[mode]++
 }
 
-func extractParties(log string) (killer string, killed string, mode string) {
-	parties := strings.Split(log, "killed")
-	killer = strings.TrimSpace(parties[0])
-	killed = strings.TrimSpace(strings.Split(parties[1], "by")[0])
-	mode = strings.TrimSpace(strings.Split(parties[1], "by")[1])
-	return
+func extractParties(log string) ([]string, error) {
+	line := strings.Split(log, ":")
+	log = strings.TrimSpace(line[len(line)-1])
+
+	regex, _ := regexp.Compile(`(?m)(.*) killed (.*) by (.*)`)
+	parties := regex.FindStringSubmatch(log) // the first element is the full string
+
+	if len(parties) != 4 {
+		return nil, errors.New("impossible extract the parties names from log")
+	}
+
+	return parties[1:], nil
 }

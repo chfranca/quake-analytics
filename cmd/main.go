@@ -21,6 +21,5 @@ func main() {
 
 	for i, v := range report.Games {
 		fmt.Printf("{\"game_%d\": %s}\n", i+1, v)
-		fmt.Printf("\nRanking:\n%s\n\n", v.PlayerRanking())
 	}
 }

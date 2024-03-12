@@ -10,3 +10,18 @@ You need [go 1.22](https://go.dev/dl/) installed in your machine. Just, run the 
 # go run cmd/main.go qgame.log
 go run cmd/main.go <filepath>
 ```
+
+## Tests
+
+If you would like to run tests, run the command bellow
+
+```go
+go test ./...
+// or to verbose mode => go test -v ./...
+```
+
+For get coverage report, run
+
+```go
+go test --cover ./...
+```
