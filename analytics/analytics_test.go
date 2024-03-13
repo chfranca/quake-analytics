@@ -6,27 +6,23 @@ import (
 	"testing"
 )
 
-type parties struct {
-	expectedKiller string
-	expectedKilled string
-	expectedMode   string
-}
-
-func (p parties) Log() string {
-	return fmt.Sprintf("13:46 Kill: 4 3 7: %s killed %s by %s", p.expectedKiller, p.expectedKilled, p.expectedMode)
-}
-
 func TestExtractParties(t *testing.T) {
 	t.Parallel()
 
-	scenes := []parties{
+	log := "13:46 Kill: 4 3 7: %s killed %s by %s"
+	scenes := []struct {
+		expectedKiller string
+		expectedKilled string
+		expectedMode   string
+	}{
 		{expectedKiller: "Player 1", expectedKilled: "God of War", expectedMode: "MOD_ROCKET_SPLASH"},
 		{expectedKiller: "Kill", expectedKilled: "killed", expectedMode: "MOD_ROCKET_SPLASH"},
 		{expectedKiller: "<world>", expectedKilled: "Zeh", expectedMode: "MOD_ROCKET_SPLASH"},
 	}
 
 	for _, s := range scenes {
-		parties, err := extractParties(s.Log())
+		line := fmt.Sprintf(log, s.expectedKiller, s.expectedKilled, s.expectedMode)
+		parties, err := extractParties(line)
 
 		if err != nil {
 			t.Error(err)
@@ -59,23 +55,21 @@ func TestExtractParties(t *testing.T) {
 	}
 }
 
-type GameTest struct {
-	totalKills          int
-	players             []string
-	kills               map[string]int
-	killsByMean         map[string]int
-	log                 string
-	expectedTotalKills  int
-	expectedPlayers     []string
-	expectedKills       map[string]int
-	expectedKillsByMean map[string]int
-}
-
 func TestRegisterKill(t *testing.T) {
 	t.Parallel()
 
 	log := `13:46 Kill: 4 3 7: Dono da Bola killed Oootsimo by MOD_ROCKET_SPLASH`
-	scenes := []GameTest{
+	scenes := []struct {
+		totalKills          int
+		players             []string
+		kills               map[string]int
+		killsByMean         map[string]int
+		log                 string
+		expectedTotalKills  int
+		expectedPlayers     []string
+		expectedKills       map[string]int
+		expectedKillsByMean map[string]int
+	}{
 		{
 			// test first point on the game
 			totalKills:          0,
@@ -160,12 +154,16 @@ func TestRegisterPlayer(t *testing.T) {
 	t.Parallel()
 
 	log := `20:38 ClientUserinfoChanged: 2 n\Isgalamido\t\0\model\uriel/zael\hmodel\uriel/zael\g_redteam\\g_blueteam\\c1\5\c2\5\hc\100\w\0\l\0\tt\0\tl\0`
-	scenes := []GameTest{
+	scenes := []struct {
+		players         []string
+		kills           map[string]int
+		expectedPlayers []string
+		expectedKills   map[string]int
+	}{
 		{
 			// test first player connected
 			players:         []string{},
 			kills:           map[string]int{},
-			log:             log,
 			expectedPlayers: []string{"Isgalamido"},
 			expectedKills:   map[string]int{"Isgalamido": 0},
 		},
@@ -173,7 +171,6 @@ func TestRegisterPlayer(t *testing.T) {
 			// test second player connected
 			players:         []string{"Dono da Bola"},
 			kills:           map[string]int{"Dono da Bola": 0},
-			log:             log,
 			expectedPlayers: []string{"Dono da Bola", "Isgalamido"},
 			expectedKills:   map[string]int{"Dono da Bola": 0, "Isgalamido": 0},
 		},
@@ -181,7 +178,6 @@ func TestRegisterPlayer(t *testing.T) {
 			// test when player already registered on the session
 			players:         []string{"Dono da Bola", "Isgalamido"},
 			kills:           map[string]int{"Dono da Bola": 0, "Isgalamido": 0},
-			log:             log,
 			expectedPlayers: []string{"Dono da Bola", "Isgalamido"},
 			expectedKills:   map[string]int{"Dono da Bola": 0, "Isgalamido": 0},
 		},
@@ -195,8 +191,7 @@ func TestRegisterPlayer(t *testing.T) {
 			KillsByMeans:  map[string]int{},
 			PlayerRanking: []string{},
 		}
-
-		registerPlayer(&game, v.log)
+		registerPlayer(&game, log)
 
 		if !reflect.DeepEqual(game.Players, v.expectedPlayers) {
 			t.Errorf("Players registered after call: %v is diffent of expected: %v", game.Players, v.expectedPlayers)
