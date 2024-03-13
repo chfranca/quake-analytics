@@ -4,55 +4,50 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExtractParties(t *testing.T) {
 	t.Parallel()
 
 	log := "13:46 Kill: 4 3 7: %s killed %s by %s"
-	scenes := []struct {
+	tests := []struct {
 		expectedKiller string
 		expectedKilled string
 		expectedMode   string
 	}{
-		{expectedKiller: "Player 1", expectedKilled: "God of War", expectedMode: "MOD_ROCKET_SPLASH"},
-		{expectedKiller: "Kill", expectedKilled: "killed", expectedMode: "MOD_ROCKET_SPLASH"},
-		{expectedKiller: "<world>", expectedKilled: "Zeh", expectedMode: "MOD_ROCKET_SPLASH"},
+		{
+			expectedKiller: "Player 1",
+			expectedKilled: "God of War",
+			expectedMode:   "MOD_ROCKET_SPLASH",
+		},
+		{
+			expectedKiller: "Kill",
+			expectedKilled: "killed",
+			expectedMode:   "MOD_ROCKET_SPLASH",
+		},
+		{
+			expectedKiller: "<world>",
+			expectedKilled: "Zeh",
+			expectedMode:   "MOD_ROCKET_SPLASH",
+		},
 	}
 
-	for _, s := range scenes {
+	for _, s := range tests {
 		line := fmt.Sprintf(log, s.expectedKiller, s.expectedKilled, s.expectedMode)
 		parties, err := extractParties(line)
 
-		if err != nil {
-			t.Error(err)
-		}
-
-		if parties[0] != s.expectedKiller {
-			t.Errorf("The killer found %s is different of expected %s", parties[0], s.expectedKiller)
-		}
-
-		if parties[1] != s.expectedKilled {
-			t.Errorf("The killed found %s is different of expected %s", parties[1], s.expectedKilled)
-		}
-
-		if parties[2] != s.expectedMode {
-			t.Errorf("The mode found %s is different of expected %s", parties[2], s.expectedMode)
-		}
+		assert.Equal(t, nil, err, "Error not expected")
+		assert.Equalf(t, s.expectedKiller, parties[0], "The killer found %s is different of expected %s", parties[0], s.expectedKiller)
+		assert.Equalf(t, s.expectedKilled, parties[1], "The killed found %s is different of expected %s", parties[1], s.expectedKilled)
+		assert.Equalf(t, s.expectedMode, parties[2], "The mode found %s is different of expected %s", parties[2], s.expectedMode)
 	}
 
-	// error case
-	expectedMessage := "impossible extract the parties names from log"
 	s := "12:12:22 Command: Some new log pattern"
 	_, err := extractParties(s)
 
-	if err == nil {
-		t.Error("should be dispatch a error when log pattern changes")
-	}
-
-	if err.Error() != expectedMessage {
-		t.Error("the error received is different of expected")
-	}
+	assert.EqualError(t, err, "impossible extract the parties names from log")
 }
 
 func TestRegisterKill(t *testing.T) {
@@ -132,21 +127,10 @@ func TestRegisterKill(t *testing.T) {
 
 		registerKill(&game, v.log)
 
-		if game.TotalKills != v.expectedTotalKills {
-			t.Errorf("The total kills: %d is diffent of expected: %d", game.TotalKills, v.expectedTotalKills)
-		}
-
-		if !reflect.DeepEqual(game.Players, v.expectedPlayers) {
-			t.Errorf("Players registered after register: %v is diffent of expected: %v", game.Players, v.expectedPlayers)
-		}
-
-		if !reflect.DeepEqual(game.Kills, v.expectedKills) {
-			t.Errorf("The kills: %v is diffent of expected: %v", game.Kills, v.expectedKills)
-		}
-
-		if !reflect.DeepEqual(game.KillsByMeans, v.expectedKillsByMean) {
-			t.Errorf("The kills by mean: %v is diffent of expected: %v", game.KillsByMeans, v.expectedKillsByMean)
-		}
+		assert.Equalf(t, v.expectedTotalKills, game.TotalKills, "The total kills: %d is diffent of expected: %d", game.TotalKills, v.expectedTotalKills)
+		assert.Truef(t, reflect.DeepEqual(game.Players, v.expectedPlayers), "Players registered after register: %v is diffent of expected: %v", game.Players, v.expectedPlayers)
+		assert.Truef(t, reflect.DeepEqual(game.Kills, v.expectedKills), "The kills: %v is diffent of expected: %v", game.Kills, v.expectedKills)
+		assert.Truef(t, reflect.DeepEqual(game.KillsByMeans, v.expectedKillsByMean), "The kills by mean: %v is diffent of expected: %v", game.KillsByMeans, v.expectedKillsByMean)
 	}
 }
 
@@ -193,12 +177,16 @@ func TestRegisterPlayer(t *testing.T) {
 		}
 		registerPlayer(&game, log)
 
-		if !reflect.DeepEqual(game.Players, v.expectedPlayers) {
-			t.Errorf("Players registered after call: %v is diffent of expected: %v", game.Players, v.expectedPlayers)
-		}
-
-		if !reflect.DeepEqual(game.Kills, v.expectedKills) {
-			t.Errorf("The kills: %v is diffent of expected: %v", game.Kills, v.expectedKills)
-		}
+		assert.Truef(t, reflect.DeepEqual(game.Players, v.expectedPlayers), "Players registered after call: %v is diffent of expected: %v", game.Players, v.expectedPlayers)
+		assert.Truef(t, reflect.DeepEqual(game.Kills, v.expectedKills), "The kills: %v is diffent of expected: %v", game.Kills, v.expectedKills)
 	}
 }
+
+// func TestProcess(t *testing.T) {
+// 	mockReader := reader.NewMock()
+// 	mockReader.On("Read", mock.Anything).Return(100, nil)
+// 	scanSvc := scan.NewInstance(mockReader)
+
+// 	expectedSize := 100
+// 	assert.Equal(t, scan.size(), expectedSize)
+// }
