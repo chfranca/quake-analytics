@@ -38,7 +38,7 @@ type Game struct {
 	PlayerRanking []string       `json:"ranking"`
 }
 
-func (g Game) String() string {
+func (g *Game) String() string {
 	json, err := json.MarshalIndent(g, "", "   ")
 
 	if err != nil {
@@ -64,6 +64,7 @@ func (g *Game) makeRanking() {
 		return players[i].Value > players[j].Value
 	})
 
+	g.PlayerRanking = []string{}
 	for _, v := range players {
 		g.PlayerRanking = append(g.PlayerRanking, fmt.Sprintf("%s: %d", v.Key, v.Value))
 	}

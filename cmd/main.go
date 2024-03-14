@@ -17,9 +17,9 @@ func main() {
 	}
 
 	path := args[0]
-	report := analytics.ProcessLog(path)
+	report := analytics.ProcessLog(analytics.ReadFile, path)
 
 	for i, v := range report.Games {
-		fmt.Printf("{\"game_%d\": %s}\n", i+1, v)
+		fmt.Printf("{\"game_%d\": %s}\n", i+1, &v)
 	}
 }

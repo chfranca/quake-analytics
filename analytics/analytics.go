@@ -9,9 +9,13 @@ import (
 	"strings"
 )
 
-func ProcessLog(path string) *Report {
+type Reader func(path string) <-chan string
 
-	stream := readFile(path)
+var regex = regexp.MustCompile(`(?m)(.*) killed (.*) by (.*)`)
+
+func ProcessLog(reader Reader, path string) *Report {
+
+	stream := reader(path)
 	results := process(stream)
 
 	report := Report{Games: []Game{}}
@@ -24,7 +28,7 @@ func ProcessLog(path string) *Report {
 	return &report
 }
 
-func readFile(path string) <-chan string {
+func ReadFile(path string) <-chan string {
 
 	stream := make(chan string, 100)
 
@@ -105,6 +109,7 @@ func registerKill(game *Game, line string) {
 	killer, killed, mode := parties[0], parties[1], parties[2]
 	game.TotalKills++
 
+	// just ensure that user self killed not add score
 	if killer != string(worldName) {
 		game.Kills[killer]++
 	} else if game.Kills[killed] > 0 {
@@ -118,7 +123,6 @@ func extractParties(log string) ([]string, error) {
 	line := strings.Split(log, ":")
 	log = strings.TrimSpace(line[len(line)-1])
 
-	regex, _ := regexp.Compile(`(?m)(.*) killed (.*) by (.*)`)
 	parties := regex.FindStringSubmatch(log) // the first element is the full string
 
 	if len(parties) != 4 {
